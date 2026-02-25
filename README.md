@@ -39,9 +39,9 @@ Requirements: `g++` with C++17 support, Linux/macOS (POSIX sockets).
 Edit `config.txt` to list all seed nodes:
 
 ```
-127.0.0.1:5000
 127.0.0.1:5001
 127.0.0.1:5002
+127.0.0.1:5003
 ```
 
 - One `IP:Port` per line (lines starting with `#` are comments).
@@ -59,13 +59,13 @@ Open separate terminals for each node. All commands assume the binary and
 
 ```bash
 # Terminal 1
-./seed 5000
-
-# Terminal 2
 ./seed 5001
 
-# Terminal 3
+# Terminal 2
 ./seed 5002
+
+# Terminal 3
+./seed 5003
 ```
 
 ### Step 2 — Start peer nodes (one per terminal)
