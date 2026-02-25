@@ -1,3 +1,4 @@
 peer
 seed
 *.txt
+.DS_Store
