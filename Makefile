@@ -19,3 +19,7 @@ peer: peer.cpp common.h
 
 clean:
 	rm -f $(TARGETS) *.txt *.log
+	touch config.txt
+	echo "127.0.0.1:5000" > config.txt
+	echo "127.0.0.1:5001" >> config.txt
+	echo "127.0.0.1:5002" >> config.txt
