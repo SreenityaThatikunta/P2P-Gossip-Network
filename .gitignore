@@ -1,3 +1,4 @@
 peer
 seed
 .DS_Store
+*.out
