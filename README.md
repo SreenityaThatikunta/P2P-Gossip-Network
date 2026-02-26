@@ -31,6 +31,14 @@ make clean
 make
 ```
 
+`make clean` removes binaries and output files, then regenerates `config.txt`
+with the specified number of seeds. Use the `NUM_SEEDS` parameter to control
+how many seed entries are written (defaults to 3):
+
+```bash
+make clean NUM_SEEDS=5    # resets config.txt with 5 seeds (ports 5001-5005)
+```
+
 Requirements: `g++` with C++17 support, Linux/macOS (POSIX sockets).
 
 ---

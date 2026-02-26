@@ -1,8 +1,3 @@
-##############################################################################
-# Makefile for gossip-based P2P network
-# Targets: seed, peer, clean
-##############################################################################
-
 CXX      = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pthread -O2
 TARGETS  = seed peer
