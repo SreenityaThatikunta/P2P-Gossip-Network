@@ -118,6 +118,12 @@ export SELF_IP=192.168.1.20
 
 ---
 
+## Flow Diagram
+
+![](assets/flow_diagram.png)
+
+---
+
 ## Protocol Overview
 
 ### Registration (Seed-Level Consensus)
