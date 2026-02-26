@@ -62,7 +62,7 @@
 #define GOSSIP_INTERVAL_SEC    5
 #define MAX_GOSSIP_MSGS        10
 #define PING_INTERVAL_SEC      3
-#define PING_TIMEOUT_SEC       5
+#define PING_TIMEOUT_SEC       2
 #define MISSED_PINGS_THRESHOLD 3    // how many consecutive missed pings before suspicion
 #define SEED_CONNECT_TIMEOUT   5
 

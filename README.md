@@ -58,30 +58,23 @@ Open separate terminals for each node. All commands assume the binary and
 ### Step 1 — Start seed nodes (one per terminal)
 
 ```bash
-# Terminal 1
-./seed 5001
+./seed 5001   # Terminal 1
 
-# Terminal 2
-./seed 5002
+./seed 5002   # Terminal 2
 
-# Terminal 3
-./seed 5003
+./seed 5003   # Terminal 3
 ```
 
 ### Step 2 — Start peer nodes (one per terminal)
 
 ```bash
-# Terminal 4
-./peer 6000
+./peer 6000   # Terminal 4
 
-# Terminal 5
-./peer 6001
+./peer 6001   # Terminal 5
 
-# Terminal 6
-./peer 6002
+./peer 6002   # Terminal 6
 
-# Terminal 7
-./peer 6003
+./peer 6003   # Terminal 6
 ```
 
 Peers register with a quorum of seeds, collect peer lists, select neighbors
@@ -194,7 +187,7 @@ All events are written to both **stdout** and an **output file**:
 
 | Node | Output file |
 |---|---|
-| `seed 5000` | `seed_5000_output.txt` |
+| `seed 5001` | `seed_5001_output.txt` |
 | `peer 6001` | `peer_6001_output.txt` |
 
 Logged events include:
@@ -202,4 +195,4 @@ Logged events include:
 - Peer: received peer lists, first-time gossip messages (with timestamps/sender IPs),
   confirmed dead-node reports
 
-Ping/pong messages are **not** logged (as per spec).
+Ping/pong messages are **not** logged.

@@ -197,16 +197,21 @@ void handleSuspicion(const std::string& suspKey, const std::string& reporterKey)
     int nbrs = neighborCount();
     int peerQuorum = nbrs / 2 + 1;  // majority among neighbors
 
+    // Read ping state BEFORE locking g_suspMu to avoid deadlock
+    bool selfSuspicious = false;
+    {
+        std::lock_guard<std::mutex> plk(g_pingMu);
+        auto it = g_missedPings.find(suspKey);
+        if (it != g_missedPings.end() && it->second >= MISSED_PINGS_THRESHOLD)
+            selfSuspicious = true;
+    }
+
     std::lock_guard<std::mutex> lk(g_suspMu);
     auto& entry = g_suspicions[suspKey];
     entry.node = parseNode(suspKey);
     entry.confirmers.insert(reporterKey);
-    // Count ourselves if we're also suspicious
-    if (g_missedPings.count(suspKey)) {
-        std::lock_guard<std::mutex> plk(g_pingMu);
-        if (g_missedPings[suspKey] >= MISSED_PINGS_THRESHOLD)
-            entry.confirmers.insert(g_selfIP + ":" + std::to_string(g_selfPort));
-    }
+    if (selfSuspicious)
+        entry.confirmers.insert(g_selfIP + ":" + std::to_string(g_selfPort));
 
     g_log->log("SUSPICION received about " + suspKey + " from " + reporterKey
              + " (" + std::to_string(entry.confirmers.size()) + "/" + std::to_string(peerQuorum) + ")");
@@ -333,36 +338,32 @@ void pingLoop() {
             for (auto& [k, s] : g_neighborSocks) snapshot.emplace_back(k, s);
         }
 
+        // Send PING to all neighbors (don't read here — the handler thread
+        // in handleIncomingNeighbor processes PONGs and resets the counter)
         for (auto& [key, sock] : snapshot) {
             sendAll(sock, std::string(MSG_PING) + "\n");
 
-            // Wait briefly for PONG (simple non-blocking check via select)
-            fd_set rset;
-            FD_ZERO(&rset);
-            FD_SET(sock, &rset);
-            timeval tv{PING_TIMEOUT_SEC, 0};
-            int r = select(sock + 1, &rset, nullptr, nullptr, &tv);
-            bool gotPong = false;
-            if (r > 0) {
-                std::string resp = recvLine(sock);
-                if (resp == MSG_PONG) gotPong = true;
-            }
+            // Increment missed-ping counter; the PONG handler resets it to 0
+            std::lock_guard<std::mutex> lk(g_pingMu);
+            g_missedPings[key]++;
+        }
 
+        // Wait for PONGs to arrive via the handler threads
+        std::this_thread::sleep_for(std::chrono::seconds(PING_TIMEOUT_SEC));
+
+        // Check for suspects
+        for (auto& [key, sock] : snapshot) {
+            int missed;
             {
                 std::lock_guard<std::mutex> lk(g_pingMu);
-                if (gotPong) {
-                    g_missedPings[key] = 0;
-                } else {
-                    g_missedPings[key]++;
-                    int missed = g_missedPings[key];
-                    if (missed >= MISSED_PINGS_THRESHOLD) {
-                        g_log->log("SUSPICION: " + key + " has missed "
-                                 + std::to_string(missed) + " pings. Broadcasting suspicion.");
-                        broadcastSuspicion(key);
-                        handleSuspicion(key,
-                            g_selfIP + ":" + std::to_string(g_selfPort));
-                    }
-                }
+                missed = g_missedPings[key];
+            }
+            if (missed >= MISSED_PINGS_THRESHOLD) {
+                g_log->log("SUSPICION: " + key + " has missed "
+                         + std::to_string(missed) + " pings. Broadcasting suspicion.");
+                broadcastSuspicion(key);
+                handleSuspicion(key,
+                    g_selfIP + ":" + std::to_string(g_selfPort));
             }
         }
     }
