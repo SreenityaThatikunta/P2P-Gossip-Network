@@ -2,5 +2,3 @@ peer
 seed
 .DS_Store
 *.out
-peer_*.txt
-seed_*txt

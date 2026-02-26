@@ -1,0 +1,29 @@
+[2026-02-26 17:08:36] Seed node started at 127.0.0.1:5001 | total seeds=3 | quorum=2
+[2026-02-26 17:08:36] Listening on port 5001
+[2026-02-26 17:08:54] RECV REGISTER_PROPOSAL for 127.0.0.1:6000 from 127.0.0.1:5002
+[2026-02-26 17:08:54] REG_VOTE: peer=127.0.0.1:6000 yes=1 no=0
+[2026-02-26 17:08:54] REGISTER_COMMIT received: Peer 127.0.0.1:6000 added to PL.
+[2026-02-26 17:08:55] Sent PEER_LIST to client on socket 5
+[2026-02-26 17:08:59] RECV REGISTER_PROPOSAL for 127.0.0.1:6001 from 127.0.0.1:5002
+[2026-02-26 17:08:59] REG_VOTE: peer=127.0.0.1:6001 yes=1 no=0
+[2026-02-26 17:08:59] REGISTER_COMMIT received: Peer 127.0.0.1:6001 added to PL.
+[2026-02-26 17:09:05] REGISTER request from peer 127.0.0.1:6002
+[2026-02-26 17:09:05] REG_PROPOSAL: Proposing registration of peer 127.0.0.1:6002
+[2026-02-26 17:09:05] REG_VOTE: peer=127.0.0.1:6002 yes=2 no=0
+[2026-02-26 17:09:05] REG_COMMIT: Peer 127.0.0.1:6002 registered after consensus.
+[2026-02-26 17:09:05] Sent REGISTER_OK to peer 127.0.0.1:6002
+[2026-02-26 17:09:05] Sent PEER_LIST to client on socket 5
+[2026-02-26 17:09:10] REGISTER request from peer 127.0.0.1:6003
+[2026-02-26 17:09:10] REG_PROPOSAL: Proposing registration of peer 127.0.0.1:6003
+[2026-02-26 17:09:10] REG_VOTE: peer=127.0.0.1:6003 yes=2 no=0
+[2026-02-26 17:09:10] REG_COMMIT: Peer 127.0.0.1:6003 registered after consensus.
+[2026-02-26 17:09:10] Sent REGISTER_OK to peer 127.0.0.1:6003
+[2026-02-26 17:09:10] Sent PEER_LIST to client on socket 5
+[2026-02-26 17:09:50] Received Dead Node report for 127.0.0.1:6003 from 127.0.0.1
+[2026-02-26 17:09:50] DEAD_PROPOSAL: Proposing removal of dead peer 127.0.0.1:6003
+[2026-02-26 17:09:50] Received Dead Node report for 127.0.0.1:6003 from 127.0.0.1
+[2026-02-26 17:09:50] DEAD_PROPOSAL: Proposing removal of dead peer 127.0.0.1:6003
+[2026-02-26 17:09:50] DEAD_VOTE: dead=127.0.0.1:6003 yes=2
+[2026-02-26 17:09:50] DEAD_COMMIT: Peer 127.0.0.1:6003 removed from PL after consensus.
+[2026-02-26 17:09:50] DEAD_COMMIT received: Peer 127.0.0.1:6003 removed from PL.
+[2026-02-26 17:09:50] DEAD_COMMIT received: Peer 127.0.0.1:6003 removed from PL.
