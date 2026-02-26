@@ -1,9 +1,5 @@
 #pragma once
-/*
- * common.h
- * Shared constants, message types, utility functions, and data structures
- * used by both seed and peer nodes.
- */
+// Shared constants, message types, utility functions, and data structures used by both seed and peer nodes.
 
 #include <string>
 #include <vector>
@@ -33,47 +29,36 @@
 #include <atomic>
 #include <condition_variable>
 
-// ─────────────────────────────────────────────
-//  Protocol message tags
-// ─────────────────────────────────────────────
 // Seed-level messages
-#define MSG_REGISTER_PROPOSAL  "REGISTER_PROPOSAL"   // seed→seed: "can we add this peer?"
-#define MSG_REGISTER_VOTE      "REGISTER_VOTE"       // seed→seed: YES/NO vote
-#define MSG_REGISTER_COMMIT    "REGISTER_COMMIT"     // seed→seed: commit the addition
-#define MSG_PEER_LIST          "PEER_LIST"            // seed→peer: list of peers
-#define MSG_REGISTER_OK        "REGISTER_OK"         // seed→peer: registration confirmed
-#define MSG_REGISTER_FAIL      "REGISTER_FAIL"       // seed→peer: registration failed
-#define MSG_DEAD_REPORT        "Dead Node"            // peer→seed: suspected dead node
-#define MSG_DEAD_PROPOSAL      "DEAD_PROPOSAL"       // seed→seed: propose removal
-#define MSG_DEAD_VOTE          "DEAD_VOTE"            // seed→seed: vote on removal
-#define MSG_DEAD_COMMIT        "DEAD_COMMIT"          // seed→seed: commit removal
-#define MSG_REMOVE_PEER        "REMOVE_PEER"          // seed→peer: node removed
+#define MSG_REGISTER_PROPOSAL  "REGISTER_PROPOSAL"   
+#define MSG_REGISTER_VOTE      "REGISTER_VOTE"       
+#define MSG_REGISTER_COMMIT    "REGISTER_COMMIT"     
+#define MSG_PEER_LIST          "PEER_LIST"           
+#define MSG_REGISTER_OK        "REGISTER_OK"         
+#define MSG_REGISTER_FAIL      "REGISTER_FAIL"       
+#define MSG_DEAD_REPORT        "Dead Node"           
+#define MSG_DEAD_PROPOSAL      "DEAD_PROPOSAL"       
+#define MSG_DEAD_VOTE          "DEAD_VOTE"           
+#define MSG_DEAD_COMMIT        "DEAD_COMMIT"          
+#define MSG_REMOVE_PEER        "REMOVE_PEER"          
 
 // Peer-level messages
-#define MSG_GOSSIP             "GOSSIP"               // peer→peer: gossip payload
-#define MSG_PING               "PING"                 // peer→peer: liveness probe
-#define MSG_PONG               "PONG"                 // peer→peer: liveness reply
-#define MSG_SUSPICION          "SUSPICION"            // peer→peer: I suspect X is dead
-#define MSG_SUSPICION_CONFIRM  "SUSPICION_CONFIRM"   // peer→peer: I confirm X is dead
+#define MSG_GOSSIP             "GOSSIP"               
+#define MSG_PING               "PING"                 
+#define MSG_PONG               "PONG"                 
+#define MSG_SUSPICION          "SUSPICION"            
+#define MSG_SUSPICION_CONFIRM  "SUSPICION_CONFIRM"   
 
-// ─────────────────────────────────────────────
-//  Timing constants (seconds unless noted)
-// ─────────────────────────────────────────────
+
 #define GOSSIP_INTERVAL_SEC    5
 #define MAX_GOSSIP_MSGS        10
 #define PING_INTERVAL_SEC      3
 #define PING_TIMEOUT_SEC       5
-#define MISSED_PINGS_THRESHOLD 3    // how many consecutive missed pings before suspicion
+#define MISSED_PINGS_THRESHOLD 3    
 #define SEED_CONNECT_TIMEOUT   5
 
-// ─────────────────────────────────────────────
-//  Buffer size
-// ─────────────────────────────────────────────
 #define BUF_SIZE 4096
 
-// ─────────────────────────────────────────────
-//  NodeInfo – identifies a node
-// ─────────────────────────────────────────────
 struct NodeInfo {
     std::string ip;
     int port;
@@ -89,10 +74,6 @@ struct NodeInfo {
         return ip + ":" + std::to_string(port);
     }
 };
-
-// ─────────────────────────────────────────────
-//  Utility helpers
-// ─────────────────────────────────────────────
 
 // Get current wall-clock timestamp string
 inline std::string currentTimestamp() {
@@ -177,7 +158,6 @@ inline std::vector<NodeInfo> readConfig(const std::string& path) {
     while (std::getline(f, line)) {
         line = trim(line);
         if (line.empty() || line[0] == '#') continue;
-        // support comma-separated or newline-separated
         auto parts = split(line, ',');
         for (auto& p : parts) {
             p = trim(p);
@@ -238,7 +218,6 @@ inline int connectTo(const std::string& ip, int port, int timeoutSec = 5) {
     getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &len);
     if (err) { close(sock); return -1; }
 
-    // Restore blocking
     fcntl(sock, F_SETFL, flags);
     return sock;
 }
