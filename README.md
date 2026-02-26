@@ -99,25 +99,6 @@ remove the peer from their Peer Lists.
 
 ---
 
-## Running on Multiple Machines
-
-1. Edit `config.txt` with the **actual IP addresses** of the seed machines.
-2. Copy `config.txt`, `seed`, and `peer` binaries to all machines.
-3. Set the `SELF_IP` environment variable on each machine if `127.0.0.1`
-   would be resolved incorrectly:
-
-```bash
-export SELF_IP=192.168.1.10
-./seed 5000
-```
-
-```bash
-export SELF_IP=192.168.1.20
-./peer 6000
-```
-
----
-
 ## Flow Diagram
 
 ![](assets/flow_diagram.png)
