@@ -346,15 +346,53 @@
              if (parts.size() >= 3) remoteKey = parts[1] + ":" + parts[2];
          }
  
-         // Guard against duplicate (outgoing connectNeighbor may already have registered)
+         // Handle simultaneous mutual connections (both peers connect to each other).
+         // DO NOT simply drop the duplicate — the remote peer stored this socket as
+         // their outgoing send socket. Closing it silently breaks their sends to us.
+         //
+         // Tie-breaking rule (consistent on both sides):
+         //   Lower-port peer keeps their outgoing (connectNeighbor) socket for sends.
+         //   Higher-port peer switches to the incoming socket for sends.
+         // Both sockets stay open for receiving.
+         bool isDuplicate = false;
+         bool spawnMainThread = true;
          {
              std::lock_guard<std::mutex> lk(g_neighborMu);
-             if (g_neighborSocks.count(remoteKey)) { close(csock); continue; }
-             g_neighborSocks[remoteKey] = csock;
+             if (g_neighborSocks.count(remoteKey)) {
+                 isDuplicate = true;
+                 int remotePort = std::stoi(split(remoteKey, ':').back());
+                 if (g_selfPort > remotePort) {
+                     // Remote has lower port — they win the tie, keep their outgoing.
+                     // We switch our registered send socket to this incoming one.
+                     int oldSock = g_neighborSocks[remoteKey];
+                     g_neighborSocks[remoteKey] = csock;
+                     close(oldSock);
+                     // Fall through: spawn handleIncomingNeighbor on new csock
+                 } else {
+                     // We have lower port — we keep our outgoing socket.
+                     // Spawn a recv-only thread to drain messages on this extra socket.
+                     spawnMainThread = false;
+                     std::thread([csock, remoteKey]() {
+                         while (true) {
+                             std::string line = recvLine(csock);
+                             if (line.empty()) break;
+                             processLine(line, remoteKey, csock);
+                         }
+                         close(csock);
+                     }).detach();
+                 }
+             } else {
+                 g_neighborSocks[remoteKey] = csock;
+             }
          }
-         registerPongFlag(remoteKey);
-         addEdge(g_selfIP + ":" + std::to_string(g_selfPort), remoteKey);
-         g_log->log("Neighbor connected: " + remoteKey);
+ 
+         if (!spawnMainThread) continue;
+ 
+         if (!isDuplicate) {
+             registerPongFlag(remoteKey);
+             addEdge(g_selfIP + ":" + std::to_string(g_selfPort), remoteKey);
+             g_log->log("Neighbor connected: " + remoteKey);
+         }
  
          std::thread(handleIncomingNeighbor, csock, remoteKey).detach();
      }
