@@ -26,8 +26,8 @@ Output files are written automatically:
 ## Build
 
 ```bash
-make          # builds both 'seed' and 'peer' binaries
 make clean    # removes binaries and log files
+make          # builds both 'seed' and 'peer' binaries
 ```
 
 Requirements: `g++` with C++17 support, Linux/macOS (POSIX sockets).
