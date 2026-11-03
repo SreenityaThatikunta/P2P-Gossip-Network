@@ -2,3 +2,5 @@ peer
 seed
 .DS_Store
 *.out
+*_output.txt
+!logs/*_output.txt
