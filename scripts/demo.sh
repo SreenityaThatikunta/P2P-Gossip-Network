@@ -46,7 +46,18 @@ for i in $(seq 0 $((NUM_PEERS - 1))); do
 done
 
 echo "==> Gossiping for ${RUNTIME}s"
-sleep "$RUNTIME"
+gossip_start=$(date +%s)
+while :; do
+  elapsed=$(($(date +%s) - gossip_start))
+  [ "$elapsed" -ge "$RUNTIME" ] && break
+  # grep exits 1 with no matches, which would trip `set -e` before the first
+  # message lands, so swallow the status and keep the count
+  delivered=$(cat peer_*_output.txt 2>/dev/null | grep -c "first time" || true)
+  printf '\r    t=%-5s messages delivered across peers: %-5s' "${elapsed}s" "${delivered:-0}"
+  sleep 4
+done
+delivered=$(cat peer_*_output.txt 2>/dev/null | grep -c "first time" || true)
+printf '\r    t=%-5s messages delivered across peers: %-5s\n' "${RUNTIME}s" "${delivered:-0}"
 
 victim_pid=${pids[$((NUM_SEEDS + NUM_PEERS - 1))]}
 victim_port=$((PEER_BASE + NUM_PEERS - 1))
@@ -72,8 +83,22 @@ while :; do
 done
 
 echo
-echo "==> Dead-node consensus as seen by the seeds"
-grep -h "DEAD_\|REMOVE_PEER" seed_*_output.txt | sort | head -20 || echo "(none yet)"
+# Every seed logs the same events within the same second, so sorting the
+# merged logs just orders them alphabetically (commit before proposal).
+# Follow one seed's own log instead: its line order is the protocol order.
+# prefer a seed that proposed the removal: a follower's log has only the vote
+# it cast and the commit it received, not the full sequence
+consensus_log=$(grep -l "DEAD_PROPOSAL" seed_*_output.txt 2>/dev/null | head -1 || true)
+[ -n "$consensus_log" ] || consensus_log=$(grep -l "DEAD_" seed_*_output.txt 2>/dev/null | head -1 || true)
+if [ -n "$consensus_log" ]; then
+  echo "==> Dead-node consensus as seen by ${consensus_log%_output.txt}"
+  sed 's/^\[[^]]*\] //' "$consensus_log" \
+    | grep "DEAD_\|REMOVE_PEER" \
+    | awk '!seen[$0]++ { print "    " $0 }'
+else
+  echo "==> Dead-node consensus as seen by the seeds"
+  echo "    (none)"
+fi
 
 echo
 echo "==> Gossip delivered per peer"
