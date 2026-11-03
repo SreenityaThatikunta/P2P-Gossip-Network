@@ -17,7 +17,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Compiler version
         run: g++ --version
@@ -33,7 +33,7 @@ jobs:
 
       - name: Upload node logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: node-logs-${{ matrix.os }}
           path: "*_output.txt"
