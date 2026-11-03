@@ -1,247 +1,233 @@
-# Gossip-Based P2P Network
+# P2P Gossip Network
 
-A gossip-based peer-to-peer network with consensus-driven membership management,
-power-law degree distribution, and two-level dead-node detection.
+A gossip-based peer-to-peer network in C++17 where **membership is agreed on by
+consensus, not asserted by any single node**. Peers join through a quorum of
+seed nodes, wire themselves into a power-law (scale-free) topology, gossip
+messages with duplicate suppression, and evict crashed peers through two
+independent rounds of majority voting.
 
----
-
-## File Structure
-
-```
-gossip_p2p/
-├── common.h        # Shared constants, message tags, data structures, utilities
-├── seed.cpp        # Seed node implementation
-├── peer.cpp        # Peer node implementation
-├── config.txt      # Seed node IP:Port list (shared by all nodes)
-├── Makefile        # Build system
-└── README.md       # This file
-```
-
-Output files are written automatically:
-
-- `seed_<port>_output.txt` — seed node log
-- `peer_<port>_output.txt` — peer node log
-
----
-
-## Build
+<p>
+<img alt="C++17" src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white">
+<img alt="POSIX sockets" src="https://img.shields.io/badge/net-POSIX%20sockets-4EAA25">
+<img alt="threads" src="https://img.shields.io/badge/concurrency-std%3A%3Athread%20%2B%20mutex-orange">
+<img alt="deps" src="https://img.shields.io/badge/dependencies-none-success">
+<img alt="license" src="https://img.shields.io/badge/license-MIT-blue">
+</p>
 
 ```bash
-make clean
-make
+git clone https://github.com/SreenityaThatikunta/P2P-Gossip-Network.git
+cd P2P-Gossip-Network && ./scripts/demo.sh
 ```
 
-`make clean` removes binaries and output files, then regenerates `config.txt`
-with the specified number of seeds. Use the `NUM_SEEDS` parameter to control
-how many seed entries are written (defaults to 3):
-
-```bash
-make clean NUM_SEEDS=5    # resets config.txt with 5 seeds (ports 5001-5005)
-```
-
-Requirements: `g++` with C++17 support, Linux/macOS (POSIX sockets).
+One command builds the project, starts 3 seeds and 4 peers, lets them gossip,
+kills a peer, and prints the consensus that removes it. Sample output from a
+previous run is checked into [`logs/`](logs/).
 
 ---
 
-## Configuration
+## What this project demonstrates
 
-Edit `config.txt` to list all seed nodes:
-
-```
-127.0.0.1:5001
-127.0.0.1:5002
-127.0.0.1:5003
-```
-
-- One `IP:Port` per line (lines starting with `#` are comments).
-- The same `config.txt` is used by **all** seed and peer nodes.
-- For multi-machine deployments, replace `127.0.0.1` with actual IP addresses.
+| Area | What's implemented |
+| --- | --- |
+| **Distributed consensus** | Propose → vote → commit across seed nodes for both joins and evictions; no seed can admit or evict a peer alone |
+| **Failure detection** | Two-level detection — peer-level suspicion quorum, then independent seed-level quorum, so one lying peer cannot evict another |
+| **Network topology** | Zipf-sampled degree + preferential attachment produce a scale-free graph with hubs, built at runtime from live degree data |
+| **Epidemic protocols** | Gossip with message-list deduplication: every message reaches every peer exactly once per peer, loops die on arrival |
+| **Systems programming** | Raw POSIX sockets, one thread per connection plus periodic ping/gossip threads, all shared state mutex-guarded |
+| **Zero dependencies** | ~1,400 lines of C++17 and a Makefile — no frameworks, no RPC library |
 
 ---
 
-## Running (Local Testing)
+## Architecture
 
-Open separate terminals for each node. All commands assume the binary and
-`config.txt` are in the same working directory.
+```mermaid
+flowchart TB
+    subgraph seeds["Seed layer — authoritative membership (quorum-replicated)"]
+        direction LR
+        S1["Seed :5001"]
+        S2["Seed :5002"]
+        S3["Seed :5003"]
+        S1 <--> S2 <--> S3
+        S3 <--> S1
+    end
 
-### Step 1 — Start seed nodes (one per terminal)
+    subgraph peers["Peer layer — power-law gossip overlay"]
+        direction LR
+        P0(("Peer :6000<br/>hub"))
+        P1(("Peer :6001"))
+        P2(("Peer :6002"))
+        P3(("Peer :6003"))
+        P0 --- P1
+        P0 --- P2
+        P0 --- P3
+        P1 --- P2
+    end
 
-```bash
-./seed 5001   # Terminal 1
-
-./seed 5002   # Terminal 2
-
-./seed 5003   # Terminal 3
+    peers -. "REGISTER / GET_PEER_LIST / Dead Node report" .-> seeds
+    seeds -. "PEER_LIST / REMOVE_PEER broadcast" .-> peers
 ```
 
-### Step 2 — Start peer nodes (one per terminal)
+The seed layer is the **membership authority**: every change to the peer list
+passes a majority vote, so the layer stays consistent even if a minority of
+seeds is unreachable. The peer layer is **self-organising**: peers pick their
+own neighbours from the peer list and need no seed involvement to gossip.
 
-```bash
-./peer 6000   # Terminal 4
+### Repository layout
 
-./peer 6001   # Terminal 5
-
-./peer 6002   # Terminal 6
-
-./peer 6003   # Terminal 7
 ```
-
-Peers register with a quorum of seeds, collect peer lists, select neighbors
-following a power-law distribution, and start gossiping every 5 seconds.
-Each peer generates up to 10 gossip messages.
-
-### Step 3 — Simulate a peer failure
-
-Kill one of the peer processes (`Ctrl+C` or `kill <pid>`). The remaining
-peers will detect the failure via missed pings, run peer-level consensus,
-and report the dead node to seed nodes. Seeds run their own consensus and
-remove the peer from their Peer Lists.
+├── common.h          # Message tags, shared structs, logger, socket helpers
+├── seed.cpp          # Seed node: registration + dead-node consensus, peer list
+├── peer.cpp          # Peer node: topology selection, gossip, ping, suspicion
+├── scripts/demo.sh   # One-command local network + failure simulation
+├── logs/             # Sample run logs (3 seeds, 4 peers, one induced failure)
+├── assets/           # Annotated screenshots of real runs
+├── config.txt        # Seed IP:Port list, shared by every node
+└── Makefile          # Build + config.txt generation
+```
 
 ---
 
-## Flow Diagram
+## Protocol walkthrough
+
+### 1. Registration — seed-level consensus
+
+A peer is admitted only after a majority of seeds vote for it.
+
+```mermaid
+sequenceDiagram
+    participant P as Peer
+    participant A as Seed A
+    participant B as Seed B
+    participant C as Seed C
+    P->>A: REGISTER:IP:Port
+    A->>B: REGISTER_PROPOSAL
+    A->>C: REGISTER_PROPOSAL
+    B-->>A: REGISTER_VOTE YES
+    Note over A: majority reached
+    A->>B: REGISTER_COMMIT
+    A->>C: REGISTER_COMMIT
+    A-->>P: REGISTER_OK
+    P->>A: GET_PEER_LIST
+    A-->>P: PEER_LIST:IP1:P1,IP2:P2,...
+```
+
+Each peer registers with ⌊n/2⌋+1 seeds and unions the peer lists it receives,
+so a single stale seed cannot hide part of the network from it.
+
+<details>
+<summary>Real log output</summary>
+
+![](assets/seed_reg_consensus.png)
+
+</details>
+
+### 2. Gossip dissemination
+
+```mermaid
+flowchart LR
+    G["Peer generates<br/><code>timestamp:IP:msgNum</code>"] --> F{"Seen in<br/>message list?"}
+    F -- "no (first receipt)" --> R["Record in ML<br/>forward to all<br/>neighbours except sender"]
+    F -- "yes (duplicate)" --> D["Drop silently"]
+```
+
+Each peer emits one message every 5 s, up to 10 messages, identified by
+`timestamp:IP:msgNum`. The message list makes forwarding idempotent: a message
+crosses each edge at most once per direction, so the flood terminates without
+any TTL or hop count.
+
+<details>
+<summary>Real log output</summary>
+
+![](assets/gossip.png)
+
+</details>
+
+### 3. Dead-node detection — two-level consensus
+
+The interesting part: **a peer's suspicion is not enough to evict it, and the
+seeds don't take a peer's word for it either.**
+
+```mermaid
+sequenceDiagram
+    participant A as Peer A
+    participant N as Other peers
+    participant S1 as Seed 1
+    participant S2 as Seeds 2,3
+    Note over A: 3 consecutive PINGs to X unanswered
+    A->>N: SUSPICION:X
+    N-->>A: SUSPICION_CONFIRM:X
+    Note over A,N: Level 1 — peer majority confirms<br/>X dropped from neighbour sets
+    A->>S1: Dead Node:X:timestamp:A
+    S1->>S2: DEAD_PROPOSAL:X
+    S2-->>S1: DEAD_VOTE YES
+    Note over S1,S2: Level 2 — seed majority commits
+    S1->>S2: DEAD_COMMIT:X
+    S1->>N: REMOVE_PEER:X broadcast
+```
+
+Liveness uses a 3 s ping interval, a 5 s timeout and a threshold of 3 missed
+pings, so a peer is suspected after roughly 9–15 s of silence rather than on a
+single dropped packet.
+
+<details>
+<summary>Real log output</summary>
+
+![](assets/peer_dead_peer.png)
+![](assets/peer_dead_seed.png)
+
+</details>
+
+### End-to-end flow
 
 ![](assets/flow_diagram.png)
 
 ---
 
-## Protocol Overview
+## Power-law degree distribution
 
-### Registration (Seed-Level Consensus)
+### Why a scale-free topology
 
-```
-Peer   →  Seed_A   : REGISTER:IP:Port
-Seed_A →  Seed_B,C : REGISTER_PROPOSAL:IP:Port:SeedA_IP:SeedA_Port
-Seed_B →  Seed_A   : REGISTER_VOTE:IP:Port:SeedB_IP:SeedB_Port:YES
-                     (majority reached)
-Seed_A →  Seed_B,C : REGISTER_COMMIT:IP:Port
-Seed_A →  Peer     : REGISTER_OK:IP:Port
-Peer   →  Seed_A   : GET_PEER_LIST
-Seed_A →  Peer     : PEER_LIST:IP1:P1,IP2:P2,...
-```
+In a power-law network the probability a node has degree `k` is
+`P(k) ~ k^(-alpha)`: **most nodes have very few connections while a few hubs
+accumulate many**. Unlike a uniform random graph, whose degrees cluster around
+the mean, this gives a long tail — hubs with 5–8 links alongside many nodes
+with 2–3.
 
-Example:
-![](assets/seed_reg_consensus.png)
+| Property | Benefit for gossip |
+| --- | --- |
+| **Short path lengths** | Messages reach any node in few hops via hubs |
+| **Robustness** | Random failures hit low-degree nodes and rarely partition the graph |
+| **Efficient dissemination** | Hubs amplify propagation, so few redundant sends are needed |
 
-### Gossip Dissemination
+### How it's built
 
-```
-Peer generates          : <timestamp>:<IP>:<MsgNum>
-Peer → all neighbors    : GOSSIP:<payload>
-Neighbor (first receipt): records in ML, forwards to all neighbors except sender
-Neighbor (duplicate).   : silently drops
-```
-
-Example:
-![](assets/gossip.png)
-
-### Dead-Node Detection (Two-Level Consensus)
-
-**Level 1 — Peer consensus:**
-
-```
-Peer_A pings Peer_X → no PONG (×3 missed)
-Peer_A → all neighbors : SUSPICION:X_IP:X_Port:A_IP:A_Port
-Peers collect suspicion reports; when majority confirm:
-       → remove X from neighbor set
-       → send Dead Node report to seeds
-```
-
-Example:
-![](assets/peer_dead_peer.png)
-
-**Level 2 — Seed consensus:**
-
-```
-Peer_A → Seeds     : Dead Node:X_IP:X_Port:timestamp:A_IP
-Seed_1 → Seed_2,3  : DEAD_PROPOSAL:X_IP:X_Port:Seed1_IP:Seed1_Port
-Seed_2 → Seed_1    : DEAD_VOTE:X_IP:X_Port:Seed2_IP:Seed2_Port:YES
-                     (majority reached)
-Seed_1 → Seed_2,3  : DEAD_COMMIT:X_IP:X_Port
-Seeds  → all peers : REMOVE_PEER:X_IP:X_Port
-```
-
-Example:
-![](assets/peer_dead_seed.png)
-
----
-
-## Power-Law Degree Distribution
-
-### What is a Power-Law Distribution?
-
-In a power-law (scale-free) network, the probability that a node has degree
-`k` follows:
-
-```
-P(k) ~ k^(-alpha)
-```
-
-This means **most nodes have very few connections**, while a **small number of
-hub nodes accumulate many connections**. Unlike a uniform random graph where
-degrees cluster around an average, a power-law network has a long tail — hubs
-with 5-8 connections coexist with many nodes that have only 2-3.
-
-Real-world examples of power-law networks include the Internet backbone,
-social networks, and citation graphs. This topology provides two key
-properties:
-
-| Property               | Benefit                                                         |
-| ---------------------- | --------------------------------------------------------------- |
-| **Short path lengths** | Messages reach any node in few hops via hubs                    |
-| **Robustness**         | Random node failures rarely disconnect the network              |
-| **Efficient gossip**   | Hub nodes amplify message propagation across the network        |
-
-### How It Works in This Project
-
-The power-law topology is built in two steps: **Zipf sampling** to decide
-*how many* neighbors a peer connects to, and **preferential attachment** to
-decide *which* peers it connects to.
-
-#### Step 1 — Zipf Sampling (neighbor count)
-
-The function `sampleZipf(maxK, alpha=1.5)` in
-[peer.cpp:77-88](peer.cpp#L77-L88) draws a random integer `k` from a
-discrete Zipf distribution:
-
-```
-P(k = i) = (1/i^alpha) / SUM(j=1..maxK, 1/j^alpha)
-```
-
-With `alpha = 1.5` and `maxK = min(pool_size, 8)`, the probabilities are
-heavily skewed toward small values:
+**Step 1 — Zipf sampling picks *how many* neighbours.**
+`sampleZipf(maxK, alpha=1.5)` ([peer.cpp:44](peer.cpp#L44)) draws `k` from a
+discrete Zipf distribution, `P(k=i) = (1/i^alpha) / Σ(1/j^alpha)`. With
+`alpha = 1.5` and `maxK = min(pool_size, 8)` the mass sits on small values:
 
 ```
 k=1: ~48%    k=2: ~17%    k=3: ~9%    k=4: ~6%    k=5: ~4%    ...
 ```
 
-After sampling, `k` is clamped to `[2, pool_size]` to guarantee every peer
-has at least 2 neighbors (ensuring basic connectivity). This means most peers
-end up with 2-3 neighbors, while a few get 5-8.
+`k` is then clamped to `[2, pool_size]` so every peer keeps at least two
+neighbours — the floor that prevents a trivially disconnected overlay.
 
-#### Step 2 — Preferential Attachment (neighbor choice)
+**Step 2 — Preferential attachment picks *which* neighbours.**
+`selectNeighbors()` ([peer.cpp:61](peer.cpp#L61)) samples `k` peers without
+replacement, weighted by `weight(node) = 1 + current_degree(node)`. A fresh
+node has weight 1; a hub with five links has weight 6 and is six times more
+likely to be chosen. That rich-get-richer loop is what produces the power law
+as peers join.
 
-Once `k` is determined, `selectNeighbors()` in
-[peer.cpp:90-118](peer.cpp#L90-L118) picks *which* `k` peers to connect to
-using weighted random selection:
-
-```
-weight(node) = 1 + current_degree(node)
-```
-
-- A **new node** with no existing connections has weight `1`.
-- A **hub node** with 5 existing connections has weight `6` — it is **6x more
-  likely** to be selected.
-- Selection is done **without replacement** to avoid duplicate connections.
-
-This creates a **"rich-get-richer"** (Matthew effect) feedback loop: nodes
-that already have many connections are more likely to receive new ones,
-naturally producing the power-law degree distribution over time.
-
-#### Resulting Network Topology
+**Topology bookkeeping.** `g_topology` (`map<string, set<string>>`) holds the
+adjacency list; `addEdge` / `removeEdge` maintain both directions and every
+access is guarded by `g_topoMu`, since connection-handler threads read and
+write it concurrently. When a peer is evicted its edges are removed, and the
+lowered degrees immediately feed back into later neighbour selection.
 
 ```
-  Degree Distribution (illustrative, 20 peers)
+  Degree distribution (illustrative, 20 peers)
 
   Frequency
      8 │ ████
@@ -254,52 +240,71 @@ naturally producing the power-law degree distribution over time.
      1 │ ████ ████ ████ ████ ██
      0 └──────────────────────────
           2     3    4    5   6+     Degree (k)
-
-  Most peers: 2-3 neighbors (low degree)
-  Few hubs:   5-8 neighbors (high degree)
 ```
 
-#### Topology Maintenance
+---
 
-The global adjacency list `g_topology` (a `map<string, set<string>>`)
-tracks every edge in the network:
+## Threat model
 
-- **`addEdge(a, b)`** — called when a new neighbor connection is established;
-  adds the edge in both directions.
-- **`removeEdge(a, b)`** — called on dead-node removal; cleans up both
-  directions.
-- **Thread-safe** — all reads and writes are protected by `g_topoMu` mutex,
-  since multiple threads handle connections concurrently.
-
-When a peer is removed (detected dead), its edges are cleaned from
-`g_topology`, and the reduced degrees naturally influence future neighbor
-selections by new peers joining the network.
+| Attack | Mitigation |
+| --- | --- |
+| **False dead report** (single peer) | Peer-level majority required before anything reaches the seeds |
+| **Colluding peers** | Seed-level majority independently confirms before removal |
+| **Sybil registration** | Seeds exchange proposals and votes; no single seed can admit a peer |
+| **False suspicion flood** | Suspicions deduplicated per suspected node, with a quorum threshold |
+| **Replay** | Every message carries a timestamp; message-list deduplication drops repeats |
 
 ---
 
-## Security Analysis
+## Running it manually
 
-| Attack                              | Mitigation                                                            |
-| ----------------------------------- | --------------------------------------------------------------------- |
-| **False dead report** (single peer) | Peer-level majority required before reporting to seeds                |
-| **Colluding peers**                 | Seed-level majority independently confirms before removal             |
-| **Sybil registration**              | Seeds exchange proposals/votes; single seed cannot unilaterally admit |
-| **False suspicion flood**           | Suspicion deduplicated per suspected node; quorum threshold           |
-| **Replay attacks**                  | Each message carries a timestamp; ML hash deduplication               |
+```bash
+make clean && make          # build; `make clean NUM_SEEDS=5` regenerates config.txt
+```
+
+Requires `g++` with C++17 and a POSIX platform (Linux/macOS). `config.txt`
+lists one `IP:Port` per line and is shared by every node — swap `127.0.0.1`
+for real addresses to run across machines.
+
+```bash
+./seed 5001   # terminal 1          ./peer 6000   # terminal 4
+./seed 5002   # terminal 2          ./peer 6001   # terminal 5
+./seed 5003   # terminal 3          ./peer 6002   # terminal 6
+```
+
+Kill any peer (`Ctrl+C`) to watch detection and both consensus rounds play
+out. Every node mirrors its events to stdout and to
+`seed_<port>_output.txt` / `peer_<port>_output.txt`.
+
+| Tunable | Default | Where |
+| --- | --- | --- |
+| Gossip interval / message cap | 5 s / 10 msgs | [common.h](common.h) |
+| Ping interval / timeout | 3 s / 5 s | [common.h](common.h) |
+| Missed-ping threshold | 3 | [common.h](common.h) |
+| Zipf exponent / max degree | 1.5 / 8 | [peer.cpp](peer.cpp) |
 
 ---
 
-## Logging
+## Design notes and limitations
 
-All events are written to both **stdout** and an **output file**:
+- **Quorum over strong consensus.** Registration and eviction use a
+  single-round propose/vote/commit majority rather than full Raft or Paxos:
+  enough to prevent unilateral membership changes, but it does not survive a
+  proposer crashing mid-commit. Leader election and log replication would be
+  the next step.
+- **Detection latency is deliberate.** Three missed pings before suspicion
+  trades fast detection for far fewer false positives on a loaded machine.
+- **TCP, thread-per-connection.** Simple and easy to reason about; an
+  epoll/kqueue event loop would be the move past a few hundred peers.
+- **Not hardened against a malicious majority.** The threat model assumes
+  honest-majority seeds; message signing would be needed otherwise.
+- **Message IDs collide on a single host.** The gossip ID is
+  `timestamp:IP:msgNum` with no port, so two peers on `127.0.0.1` that emit
+  their *n*-th message in the same second produce the same ID and each drops
+  the other's as a duplicate — visible in `logs/` as a peer with fewer
+  first-time receipts than its neighbours. Including the port (or a per-peer
+  UUID) in the ID fixes it; across distinct hosts the ID is already unique.
 
-| Node        | Output file            |
-| ----------- | ---------------------- |
-| `seed 5000` | `seed_5000_output.txt` |
-| `peer 6001` | `peer_6001_output.txt` |
+## License
 
-Logged events include:
-
-- Seed: registration proposals, consensus votes, commits, dead-node removals
-- Peer: received peer lists, first-time gossip messages (with timestamps/sender IPs),
-  confirmed dead-node reports
+[MIT](LICENSE)
