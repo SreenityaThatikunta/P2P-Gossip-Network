@@ -32,7 +32,7 @@ previous run is checked into [`logs/`](logs/).
 | **Distributed consensus** | Propose → vote → commit across seed nodes for both joins and evictions; no seed can admit or evict a peer alone |
 | **Failure detection** | Two-level detection — peer-level suspicion quorum, then independent seed-level quorum, so one lying peer cannot evict another |
 | **Network topology** | Zipf-sampled degree + preferential attachment produce a scale-free graph with hubs, built at runtime from live degree data |
-| **Epidemic protocols** | Gossip with message-list deduplication: every message reaches every peer exactly once per peer, loops die on arrival |
+| **Epidemic protocols** | Gossip with message-list deduplication — each peer acts on a message once and forwards it on, so floods terminate without a TTL or hop count |
 | **Systems programming** | Raw POSIX sockets, one thread per connection plus periodic ping/gossip threads, all shared state mutex-guarded |
 | **Zero dependencies** | ~1,400 lines of C++17 and a Makefile — no frameworks, no RPC library |
 
