@@ -125,13 +125,14 @@ so a single stale seed cannot hide part of the network from it.
 
 ```mermaid
 flowchart LR
-    G["Peer generates<br/><code>timestamp:IP:msgNum</code>"] --> F{"Seen in<br/>message list?"}
+    G["Peer generates<br/><code>timestamp:IP:port:msgNum</code>"] --> F{"Seen in<br/>message list?"}
     F -- "no (first receipt)" --> R["Record in ML<br/>forward to all<br/>neighbours except sender"]
     F -- "yes (duplicate)" --> D["Drop silently"]
 ```
 
 Each peer emits one message every 5 s, up to 10 messages, identified by
-`timestamp:IP:msgNum`. The message list makes forwarding idempotent: a message
+`timestamp:IP:port:msgNum` — the origin's port is part of the identity so that
+peers sharing a host never collide. The message list makes forwarding idempotent: a message
 crosses each edge at most once per direction, so the flood terminates without
 any TTL or hop count.
 
@@ -165,9 +166,15 @@ sequenceDiagram
     S1->>N: REMOVE_PEER:X broadcast
 ```
 
-Liveness uses a 3 s ping interval, a 5 s timeout and a threshold of 3 missed
-pings, so a peer is suspected after roughly 9–15 s of silence rather than on a
-single dropped packet.
+Liveness has a fast path and a slow path. A peer holding a TCP connection to
+the victim sees the socket close and jumps straight to the suspicion
+threshold — **~1 s** in a measured run. A peer without a direct connection
+relies on ping timeouts, and because `pingLoop` waits out each 5 s timeout
+serially, one pass over *n* neighbours takes `3 + 5n` seconds; reaching the
+3-missed-ping threshold took **~44 s** on a 4-peer run. Eviction needs a
+quorum, so which path dominates depends on how many suspecting peers held a
+direct connection: across runs with 3 seeds and 4 peers, kill to
+`DEAD_COMMIT` measured **12–45 s**.
 
 <details>
 <summary>Real log output</summary>
@@ -298,12 +305,12 @@ out. Every node mirrors its events to stdout and to
   epoll/kqueue event loop would be the move past a few hundred peers.
 - **Not hardened against a malicious majority.** The threat model assumes
   honest-majority seeds; message signing would be needed otherwise.
-- **Message IDs collide on a single host.** The gossip ID is
-  `timestamp:IP:msgNum` with no port, so two peers on `127.0.0.1` that emit
-  their *n*-th message in the same second produce the same ID and each drops
-  the other's as a duplicate — visible in `logs/` as a peer with fewer
-  first-time receipts than its neighbours. Including the port (or a per-peer
-  UUID) in the ID fixes it; across distinct hosts the ID is already unique.
+- **Failure detection is slower than it needs to be.** `pingLoop` blocks for
+  the full 5 s timeout on each neighbour in turn, so detection latency grows
+  linearly with degree — exactly the wrong property for the hub nodes the
+  topology deliberately creates. Issuing pings concurrently and collecting
+  PONGs on a deadline would make it roughly constant-time; measured numbers
+  above are from the current serial implementation.
 
 ## License
 
