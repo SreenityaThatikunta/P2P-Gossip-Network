@@ -7,6 +7,7 @@ messages with duplicate suppression, and evict crashed peers through two
 independent rounds of majority voting.
 
 <p>
+<a href="https://github.com/SreenityaThatikunta/P2P-Gossip-Network/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/SreenityaThatikunta/P2P-Gossip-Network/actions/workflows/ci.yml/badge.svg"></a>
 <img alt="C++17" src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white">
 <img alt="POSIX sockets" src="https://img.shields.io/badge/net-POSIX%20sockets-4EAA25">
 <img alt="threads" src="https://img.shields.io/badge/concurrency-std%3A%3Athread%20%2B%20mutex-orange">
@@ -289,6 +290,30 @@ out. Every node mirrors its events to stdout and to
 | Ping interval / timeout | 3 s / 5 s | [common.h](common.h) |
 | Missed-ping threshold | 3 | [common.h](common.h) |
 | Zipf exponent / max degree | 1.5 / 8 | [peer.cpp](peer.cpp) |
+
+---
+
+## Tests
+
+[`scripts/integration_test.sh`](scripts/integration_test.sh) boots a real
+network and asserts the three properties the protocol is meant to guarantee,
+exiting non-zero if any fails:
+
+| Assertion | Checks |
+| --- | --- |
+| Admission | Every peer reaches `REG_COMMIT` on a seed, i.e. a quorum voted it in |
+| Convergence | Every peer logs a first-time receipt from **every** other peer |
+| Eviction | A killed peer produces peer-level suspicion, a seed `DEAD_PROPOSAL`, and `DEAD_COMMIT` on a majority of seeds |
+
+```bash
+./scripts/integration_test.sh        # 3 seeds, 4 peers
+./scripts/integration_test.sh 5 6    # 5 seeds, 6 peers
+```
+
+CI runs it on Ubuntu and macOS on every push. The convergence assertion has
+teeth: it was written against a real bug in which peers sharing a host used
+colliding message IDs and silently dropped each other's gossip, and
+reintroducing that bug turns every convergence check red.
 
 ---
 
