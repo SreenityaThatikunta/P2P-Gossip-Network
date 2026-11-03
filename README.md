@@ -15,6 +15,8 @@ independent rounds of majority voting.
 <img alt="license" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
+![A 3-seed, 4-peer network starting up, gossiping, and evicting a killed peer by consensus](assets/demo.gif)
+
 ```bash
 git clone https://github.com/SreenityaThatikunta/P2P-Gossip-Network.git
 cd P2P-Gossip-Network && ./scripts/demo.sh
