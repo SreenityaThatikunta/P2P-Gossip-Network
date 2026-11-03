@@ -232,8 +232,8 @@ void processLine(const std::string &line, const std::string &remoteKey, int sock
         std::string payload = line.substr(strlen(MSG_GOSSIP) + 1);
         std::string dedupKey;
         auto parts = split(payload, ':');
-        if (parts.size() >= 3)
-            dedupKey = parts[1] + ":" + parts[2];
+        if (parts.size() >= 4)
+            dedupKey = parts[1] + ":" + parts[2] + ":" + parts[3];
         else
             dedupKey = hashMsg(payload);
         bool isNew = false;
@@ -502,8 +502,9 @@ void gossipLoop()
     {
         int msgNum = ++g_msgCounter;
         std::string ts = std::to_string(epochSec());
-        std::string payload = ts + ":" + g_selfIP + ":" + std::to_string(msgNum);
-        std::string dedupKey = g_selfIP + ":" + std::to_string(msgNum);
+        std::string origin = g_selfIP + ":" + std::to_string(g_selfPort);
+        std::string payload = ts + ":" + origin + ":" + std::to_string(msgNum);
+        std::string dedupKey = origin + ":" + std::to_string(msgNum);
         {
             std::lock_guard<std::mutex> lk(g_mlMu);
             g_messageList[dedupKey] = payload;
