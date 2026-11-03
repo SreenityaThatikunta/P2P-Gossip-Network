@@ -1,50 +1,40 @@
-[2026-02-26 19:14:22] Peer started at 127.0.0.1:6001 | seeds=3
-[2026-02-26 19:14:22] Need to register with 2 of 3 seeds.
-[2026-02-26 19:14:23] Registered with seed 127.0.0.1:5001
-[2026-02-26 19:14:23] Registered with seed 127.0.0.1:5002
-[2026-02-26 19:14:23] Successfully registered with 2 seeds.
-[2026-02-26 19:14:23] Peer list from seed 127.0.0.1:5001: 127.0.0.1:6001,127.0.0.1:6002,127.0.0.1:6003
-[2026-02-26 19:14:23] Peer list from seed 127.0.0.1:5002: 127.0.0.1:6001,127.0.0.1:6002,127.0.0.1:6003
-[2026-02-26 19:14:23] Total candidate peers: 2
-[2026-02-26 19:14:23] Selected 2 neighbors.
-[2026-02-26 19:14:23] Connected to neighbor 127.0.0.1:6002
-[2026-02-26 19:14:23] Connected to neighbor 127.0.0.1:6003
-[2026-02-26 19:14:24] GOSSIP received (first time): 1772113464:127.0.0.1:1 from 127.0.0.1:6002
-[2026-02-26 19:14:24] Neighbor connected: 127.0.0.1:6000
-[2026-02-26 19:14:25] GOSSIP sent [1]: 1772113465:127.0.0.1:1
-[2026-02-26 19:14:27] GOSSIP received (first time): 1772113467:127.0.0.1:2 from 127.0.0.1:6003
-[2026-02-26 19:14:30] GOSSIP sent [2]: 1772113470:127.0.0.1:2
-[2026-02-26 19:14:32] GOSSIP received (first time): 1772113472:127.0.0.1:3 from 127.0.0.1:6003
-[2026-02-26 19:14:35] GOSSIP sent [3]: 1772113475:127.0.0.1:3
-[2026-02-26 19:14:37] GOSSIP received (first time): 1772113477:127.0.0.1:4 from 127.0.0.1:6003
-[2026-02-26 19:14:39] Neighbor disconnected: 127.0.0.1:6002
-[2026-02-26 19:14:40] GOSSIP sent [4]: 1772113480:127.0.0.1:4
-[2026-02-26 19:14:42] GOSSIP received (first time): 1772113482:127.0.0.1:5 from 127.0.0.1:6003
-[2026-02-26 19:14:45] GOSSIP sent [5]: 1772113485:127.0.0.1:5
-[2026-02-26 19:14:46] SUSPICION about 127.0.0.1:6002 from 127.0.0.1:6003 (1/2)
-[2026-02-26 19:14:47] GOSSIP received (first time): 1772113487:127.0.0.1:6 from 127.0.0.1:6003
-[2026-02-26 19:14:49] SUSPICION: 127.0.0.1:6002 has missed 4 pings. Broadcasting suspicion.
-[2026-02-26 19:14:49] SUSPICION about 127.0.0.1:6002 from 127.0.0.1:6001 (2/2)
-[2026-02-26 19:14:49] PEER-LEVEL CONSENSUS: 127.0.0.1:6002 confirmed dead. Reporting to seeds.
-[2026-02-26 19:14:49] DEAD REPORT sent to seeds for 127.0.0.1:6002
-[2026-02-26 19:14:50] GOSSIP sent [6]: 1772113490:127.0.0.1:6
-[2026-02-26 19:14:53] GOSSIP received (first time): 1772113493:127.0.0.1:7 from 127.0.0.1:6003
-[2026-02-26 19:14:55] GOSSIP sent [7]: 1772113495:127.0.0.1:7
-[2026-02-26 19:14:58] GOSSIP received (first time): 1772113498:127.0.0.1:8 from 127.0.0.1:6003
-[2026-02-26 19:15:00] GOSSIP sent [8]: 1772113500:127.0.0.1:8
-[2026-02-26 19:15:03] GOSSIP received (first time): 1772113503:127.0.0.1:9 from 127.0.0.1:6003
-[2026-02-26 19:15:05] GOSSIP sent [9]: 1772113505:127.0.0.1:9
-[2026-02-26 19:15:06] Neighbor disconnected: 127.0.0.1:6000
-[2026-02-26 19:15:08] GOSSIP received (first time): 1772113508:127.0.0.1:10 from 127.0.0.1:6003
-[2026-02-26 19:15:10] GOSSIP sent [10]: 1772113510:127.0.0.1:10
-[2026-02-26 19:15:10] SUSPICION: 127.0.0.1:6000 has missed 4 pings. Broadcasting suspicion.
-[2026-02-26 19:15:10] SUSPICION about 127.0.0.1:6000 from 127.0.0.1:6001 (1/2)
-[2026-02-26 19:15:15] Gossip generation complete (sent 10 messages).
-[2026-02-26 19:15:15] Gossip phase complete. Continuing liveness monitoring.
-[2026-02-26 19:15:18] SUSPICION: 127.0.0.1:6000 has missed 5 pings. Broadcasting suspicion.
-[2026-02-26 19:15:18] SUSPICION about 127.0.0.1:6000 from 127.0.0.1:6001 (1/2)
-[2026-02-26 19:15:26] SUSPICION: 127.0.0.1:6000 has missed 6 pings. Broadcasting suspicion.
-[2026-02-26 19:15:26] SUSPICION about 127.0.0.1:6000 from 127.0.0.1:6001 (1/2)
-[2026-02-26 19:15:32] SUSPICION about 127.0.0.1:6000 from 127.0.0.1:6003 (2/2)
-[2026-02-26 19:15:32] PEER-LEVEL CONSENSUS: 127.0.0.1:6000 confirmed dead. Reporting to seeds.
-[2026-02-26 19:15:32] DEAD REPORT sent to seeds for 127.0.0.1:6000
+[2026-11-03 19:05:48] Peer started at 127.0.0.1:6001 | seeds=3
+[2026-11-03 19:05:48] Need to register with 2 of 3 seeds.
+[2026-11-03 19:05:48] Registered with seed 127.0.0.1:5002
+[2026-11-03 19:05:48] Registered with seed 127.0.0.1:5001
+[2026-11-03 19:05:48] Successfully registered with 2 seeds.
+[2026-11-03 19:05:48] Peer list from seed 127.0.0.1:5002: 127.0.0.1:6000,127.0.0.1:6001
+[2026-11-03 19:05:48] Peer list from seed 127.0.0.1:5001: 127.0.0.1:6000,127.0.0.1:6001
+[2026-11-03 19:05:48] Total candidate peers: 1
+[2026-11-03 19:05:48] Selected 1 neighbors.
+[2026-11-03 19:05:48] Connected to neighbor 127.0.0.1:6000
+[2026-11-03 19:05:49] Neighbor connected: 127.0.0.1:6002
+[2026-11-03 19:05:50] GOSSIP received (first time): 1793712950:127.0.0.1:6000:1 from 127.0.0.1:6000
+[2026-11-03 19:05:50] GOSSIP sent [1]: 1793712950:127.0.0.1:6001:1
+[2026-11-03 19:05:51] GOSSIP received (first time): 1793712951:127.0.0.1:6002:1 from 127.0.0.1:6002
+[2026-11-03 19:05:52] GOSSIP received (first time): 1793712952:127.0.0.1:6003:1 from 127.0.0.1:6000
+[2026-11-03 19:05:55] GOSSIP received (first time): 1793712955:127.0.0.1:6000:2 from 127.0.0.1:6000
+[2026-11-03 19:05:56] GOSSIP sent [2]: 1793712956:127.0.0.1:6001:2
+[2026-11-03 19:05:56] GOSSIP received (first time): 1793712956:127.0.0.1:6002:2 from 127.0.0.1:6002
+[2026-11-03 19:05:57] GOSSIP received (first time): 1793712957:127.0.0.1:6003:2 from 127.0.0.1:6000
+[2026-11-03 19:06:00] GOSSIP received (first time): 1793712960:127.0.0.1:6000:3 from 127.0.0.1:6000
+[2026-11-03 19:06:01] GOSSIP sent [3]: 1793712961:127.0.0.1:6001:3
+[2026-11-03 19:06:01] GOSSIP received (first time): 1793712961:127.0.0.1:6002:3 from 127.0.0.1:6002
+[2026-11-03 19:06:02] GOSSIP received (first time): 1793712962:127.0.0.1:6003:3 from 127.0.0.1:6002
+[2026-11-03 19:06:05] GOSSIP received (first time): 1793712965:127.0.0.1:6000:4 from 127.0.0.1:6000
+[2026-11-03 19:06:06] GOSSIP sent [4]: 1793712966:127.0.0.1:6001:4
+[2026-11-03 19:06:06] GOSSIP received (first time): 1793712966:127.0.0.1:6002:4 from 127.0.0.1:6002
+[2026-11-03 19:06:07] GOSSIP received (first time): 1793712967:127.0.0.1:6003:4 from 127.0.0.1:6002
+[2026-11-03 19:06:10] GOSSIP received (first time): 1793712970:127.0.0.1:6000:5 from 127.0.0.1:6000
+[2026-11-03 19:06:11] GOSSIP sent [5]: 1793712971:127.0.0.1:6001:5
+[2026-11-03 19:06:11] GOSSIP received (first time): 1793712971:127.0.0.1:6002:5 from 127.0.0.1:6002
+[2026-11-03 19:06:15] GOSSIP received (first time): 1793712975:127.0.0.1:6000:6 from 127.0.0.1:6000
+[2026-11-03 19:06:16] GOSSIP sent [6]: 1793712976:127.0.0.1:6001:6
+[2026-11-03 19:06:16] GOSSIP received (first time): 1793712976:127.0.0.1:6002:6 from 127.0.0.1:6002
+[2026-11-03 19:06:19] SUSPICION about 127.0.0.1:6003 from 127.0.0.1:6000 (1/2)
+[2026-11-03 19:06:20] GOSSIP received (first time): 1793712980:127.0.0.1:6000:7 from 127.0.0.1:6000
+[2026-11-03 19:06:20] SUSPICION about 127.0.0.1:6003 from 127.0.0.1:6002 (2/2)
+[2026-11-03 19:06:20] PEER-LEVEL CONSENSUS: 127.0.0.1:6003 confirmed dead. Reporting to seeds.
+[2026-11-03 19:06:20] DEAD REPORT sent to seeds for 127.0.0.1:6003
+[2026-11-03 19:06:21] GOSSIP sent [7]: 1793712981:127.0.0.1:6001:7
+[2026-11-03 19:06:21] GOSSIP received (first time): 1793712981:127.0.0.1:6002:7 from 127.0.0.1:6002
