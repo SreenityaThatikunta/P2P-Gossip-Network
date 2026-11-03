@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compiler version
+        run: g++ --version
+
+      - name: Build
+        run: make clean && make
+
+      - name: Integration test (3 seeds, 4 peers)
+        env:
+          GOSSIP_WAIT: 30
+          DETECT_TIMEOUT: 240
+        run: ./scripts/integration_test.sh 3 4
+
+      - name: Upload node logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-logs-${{ matrix.os }}
+          path: "*_output.txt"
+          if-no-files-found: ignore
